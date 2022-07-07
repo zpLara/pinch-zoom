@@ -33,6 +33,7 @@ const minScaleAttr = 'min-scale';
 const maxScaleAttr = 'max-scale';
 const noDefaultPanAttr = 'no-default-pan';
 const twoFingerPanAttr = 'two-finger-pan';
+const noPanBeforeZoom = 'no-pan-before-zoom';
 
 export interface ScaleToOpts extends ChangeOptions {
   /** Transform origin. Can be a number, or string percent, eg "50%" */
@@ -97,7 +98,9 @@ export default class PinchZoom extends HTMLElement {
 
   private _twoFingerPan = false;
 
-  static get observedAttributes() { return [minScaleAttr, maxScaleAttr, noDefaultPanAttr, twoFingerPanAttr]; }
+  private _noPanBeforeZoom = false;
+
+  static get observedAttributes() { return [minScaleAttr, maxScaleAttr, noDefaultPanAttr, twoFingerPanAttr, noPanBeforeZoom]; }
 
   constructor() {
     super();
@@ -163,6 +166,11 @@ export default class PinchZoom extends HTMLElement {
         this.twoFingerPan = false;
       }
     }
+    if (name === noPanBeforeZoom) {
+      if (newValue == '1' || newValue == "true") {
+
+      }
+    }
   }
 
   get minScale(): number {
@@ -204,7 +212,9 @@ export default class PinchZoom extends HTMLElement {
   }
 
   get enablePan() {
-    return this._enablePan;
+    //the default behavior is that enablePan is true, so to negate panning, set no-default-pan=true
+    //in order for panning to work, leave noDefaultPan to default && leave noPanBeforeZoom to default (false), if noPanBeforeZoom is true, it must be zoomed-in first.
+    return this._enablePan && (!this.noPanBeforeZoom || (this.noPanBeforeZoom && this.scale > this.minScale));
   }
 
   set twoFingerPan(value: boolean) {
@@ -213,6 +223,14 @@ export default class PinchZoom extends HTMLElement {
 
   get twoFingerPan() {
     return this._twoFingerPan;
+  }
+
+  set noPanBeforeZoom(value: boolean) {
+    this._noPanBeforeZoom = value;
+  }
+
+  get noPanBeforeZoom() {
+    return this._noPanBeforeZoom;
   }
 
   connectedCallback() {

@@ -38,6 +38,7 @@ const minScaleAttr = 'min-scale';
 const maxScaleAttr = 'max-scale';
 const noDefaultPanAttr = 'no-default-pan';
 const twoFingerPanAttr = 'two-finger-pan';
+const noPanBeforeZoom = 'no-pan-before-zoom';
 function getDistance(a, b) {
     if (!b)
         return 0;
@@ -80,6 +81,7 @@ class PinchZoom extends HTMLElement {
         this._transform = createMatrix();
         this._enablePan = true;
         this._twoFingerPan = false;
+        this._noPanBeforeZoom = false;
         // Watch for children changes.
         // Note this won't fire for initial contents,
         // so _stageElChange is also called in connectedCallback.
@@ -113,7 +115,7 @@ class PinchZoom extends HTMLElement {
         });
         this.addEventListener('wheel', event => this._onWheel(event));
     }
-    static get observedAttributes() { return [minScaleAttr, maxScaleAttr, noDefaultPanAttr, twoFingerPanAttr]; }
+    static get observedAttributes() { return [minScaleAttr, maxScaleAttr, noDefaultPanAttr, twoFingerPanAttr, noPanBeforeZoom]; }
     attributeChangedCallback(name, oldValue, newValue) {
         if (name === minScaleAttr) {
             if (this.scale < this.minScale) {
@@ -177,13 +179,21 @@ class PinchZoom extends HTMLElement {
         }
     }
     get enablePan() {
-        return this._enablePan;
+        //the default behavior is that enablePan is true, so to negate panning, set no-default-pan=true
+        //in order for panning to work, leave noDefaultPan to default && leave noPanBeforeZoom to default (false), if noPanBeforeZoom is true, it must be zoomed-in first.
+        return this._enablePan && (!this.noPanBeforeZoom || (this.noPanBeforeZoom && this.scale > this.minScale));
     }
     set twoFingerPan(value) {
         this._twoFingerPan = value;
     }
     get twoFingerPan() {
         return this._twoFingerPan;
+    }
+    set noPanBeforeZoom(value) {
+        this._noPanBeforeZoom = value;
+    }
+    get noPanBeforeZoom() {
+        return this._noPanBeforeZoom;
     }
     connectedCallback() {
         this._stageElChange();
