@@ -30,6 +30,7 @@ interface SetTransformOpts extends ChangeOptions {
 type ScaleRelativeToValues = 'container' | 'content';
 
 const minScaleAttr = 'min-scale';
+const maxScaleAttr = 'max-scale';
 
 export interface ScaleToOpts extends ChangeOptions {
   /** Transform origin. Can be a number, or string percent, eg "50%" */
@@ -57,7 +58,7 @@ function getMidpoint(a: Point, b?: Point): Point {
 function getAbsoluteValue(value: string | number, max: number): number {
   if (typeof value === 'number') return value;
 
-  if (value.trimRight().endsWith('%')) {
+  if (value.trimEnd().endsWith('%')) {
     return max * parseFloat(value) / 100;
   }
   return parseFloat(value);
@@ -80,6 +81,7 @@ function createPoint(): SVGPoint {
 }
 
 const MIN_SCALE = 0.01;
+const MAX_SCALE = 10.00;
 
 export default class PinchZoom extends HTMLElement {
   // The element that we'll transform.
@@ -89,7 +91,7 @@ export default class PinchZoom extends HTMLElement {
   // Current transform.
   private _transform: SVGMatrix = createMatrix();
 
-  static get observedAttributes() { return [minScaleAttr]; }
+  static get observedAttributes() { return [minScaleAttr, maxScaleAttr]; }
 
   constructor() {
     super();
@@ -119,9 +121,15 @@ export default class PinchZoom extends HTMLElement {
   attributeChangedCallback(name: string, oldValue: string, newValue: string) {
     if (name === minScaleAttr) {
       if (this.scale < this.minScale) {
-        this.setTransform({scale: this.minScale});
+        this.setTransform({ scale: this.minScale });
       }
     }
+    if (name === maxScaleAttr) {
+      if (this.scale > this.maxScale) {
+        this.setTransform({ scale: this.maxScale });
+      }
+    }
+
   }
 
   get minScale(): number {
@@ -137,6 +145,21 @@ export default class PinchZoom extends HTMLElement {
   set minScale(value: number) {
     this.setAttribute(minScaleAttr, String(value));
   }
+
+  get maxScale(): number {
+    const attrValue = this.getAttribute(maxScaleAttr);
+    if (!attrValue) return MAX_SCALE;
+
+    const value = parseFloat(attrValue);
+    if (Number.isFinite(value)) return Math.min(MAX_SCALE, value);
+
+    return MAX_SCALE;
+  }
+
+  set maxScale(value: number) {
+    this.setAttribute(maxScaleAttr, String(value));
+  }
+
 
   connectedCallback() {
     this._stageElChange();
@@ -271,6 +294,7 @@ export default class PinchZoom extends HTMLElement {
   private _updateTransform(scale: number, x: number, y: number, allowChangeEvent: boolean) {
     // Avoid scaling to zero
     if (scale < this.minScale) return;
+    if (scale > this.maxScale) return;
 
     // Return if there's no change
     if (
