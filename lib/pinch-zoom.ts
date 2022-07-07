@@ -168,7 +168,9 @@ export default class PinchZoom extends HTMLElement {
     }
     if (name === noPanBeforeZoom) {
       if (newValue == '1' || newValue == "true") {
-
+        this.noPanBeforeZoom = true;
+      } else {
+        this.noPanBeforeZoom = false;
       }
     }
   }

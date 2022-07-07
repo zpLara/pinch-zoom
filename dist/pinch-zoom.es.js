@@ -140,6 +140,14 @@ class PinchZoom extends HTMLElement {
                 this.twoFingerPan = false;
             }
         }
+        if (name === noPanBeforeZoom) {
+            if (newValue == '1' || newValue == "true") {
+                this.noPanBeforeZoom = true;
+            }
+            else {
+                this.noPanBeforeZoom = false;
+            }
+        }
     }
     get minScale() {
         const attrValue = this.getAttribute(minScaleAttr);
