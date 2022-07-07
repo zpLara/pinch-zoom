@@ -281,6 +281,8 @@ var PinchZoom = (function () {
 
     const minScaleAttr = 'min-scale';
     const maxScaleAttr = 'max-scale';
+    const noDefaultPanAttr = 'no-default-pan';
+    const twoFingerPanAttr = 'two-finger-pan';
     function getDistance(a, b) {
         if (!b)
             return 0;
@@ -315,12 +317,14 @@ var PinchZoom = (function () {
         return getSVG().createSVGPoint();
     }
     const MIN_SCALE = 0.01;
-    const MAX_SCALE = 10.00;
+    const MAX_SCALE = 100.00;
     class PinchZoom extends HTMLElement {
         constructor() {
             super();
             // Current transform.
             this._transform = createMatrix();
+            this._enablePan = true;
+            this._twoFingerPan = false;
             // Watch for children changes.
             // Note this won't fire for initial contents,
             // so _stageElChange is also called in connectedCallback.
@@ -332,16 +336,29 @@ var PinchZoom = (function () {
                     // We only want to track 2 pointers at most
                     if (pointerTracker.currentPointers.length === 2 || !this._positioningEl)
                         return false;
-                    event.preventDefault();
+                    //we allow default for the first pointer if enablePan is false or we are using a mouse
+                    if (this.enablePan || pointerTracker.currentPointers.length == 1 ||
+                        (event instanceof PointerEvent && event.pointerType == "mouse")) {
+                        this.enablePan = true; //a second finger automatically enables panning
+                        event.preventDefault();
+                    }
                     return true;
                 },
                 move: (previousPointers) => {
-                    this._onPointerMove(previousPointers, pointerTracker.currentPointers);
+                    if (this.enablePan) {
+                        this._onPointerMove(previousPointers, pointerTracker.currentPointers);
+                    }
+                },
+                end: (pointer, event, cancelled) => {
+                    //revert to no panning when in twoFingerPan mode
+                    if (this.twoFingerPan && pointerTracker.currentPointers.length == 1) {
+                        this.enablePan = false;
+                    }
                 },
             });
             this.addEventListener('wheel', event => this._onWheel(event));
         }
-        static get observedAttributes() { return [minScaleAttr, maxScaleAttr]; }
+        static get observedAttributes() { return [minScaleAttr, maxScaleAttr, noDefaultPanAttr, twoFingerPanAttr]; }
         attributeChangedCallback(name, oldValue, newValue) {
             if (name === minScaleAttr) {
                 if (this.scale < this.minScale) {
@@ -351,6 +368,23 @@ var PinchZoom = (function () {
             if (name === maxScaleAttr) {
                 if (this.scale > this.maxScale) {
                     this.setTransform({ scale: this.maxScale });
+                }
+            }
+            if (name === noDefaultPanAttr) {
+                if (newValue == "1" || newValue == "true") {
+                    this.enablePan = false;
+                }
+                else {
+                    this.enablePan = true;
+                }
+            }
+            if (name === twoFingerPanAttr) {
+                if (newValue == "1" || newValue == "true") {
+                    this.twoFingerPan = true;
+                    this.enablePan = false;
+                }
+                else {
+                    this.twoFingerPan = false;
                 }
             }
         }
@@ -377,6 +411,24 @@ var PinchZoom = (function () {
         }
         set maxScale(value) {
             this.setAttribute(maxScaleAttr, String(value));
+        }
+        set enablePan(value) {
+            this._enablePan = value;
+            if (!this._enablePan) {
+                this.style.touchAction = 'pan-y pan-x';
+            }
+            else if (this._enablePan && this.style.touchAction != 'none') {
+                this.style.touchAction = 'none';
+            }
+        }
+        get enablePan() {
+            return this._enablePan;
+        }
+        set twoFingerPan(value) {
+            this._twoFingerPan = value;
+        }
+        get twoFingerPan() {
+            return this._twoFingerPan;
         }
         connectedCallback() {
             this._stageElChange();
