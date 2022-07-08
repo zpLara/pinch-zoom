@@ -314,10 +314,17 @@ export default class PinchZoom extends HTMLElement {
       y === this.y
     ) return;
 
-    if (this.scale === 1 && scale === this.scale && this.noPanBeforeZoom) {
-      //disallow pan before zoom
-      return;
+    //force scale to be 2dp
+    scale = parseFloat(scale.toFixed(2));
+
+    //disallow transform if scale <= this.minScale
+    if (this.scale === this.minScale && this.noPanBeforeZoom) {
+      //disallow pan before zoom, by setting x/y to 0
+      x = 0;
+      y = 0;
     }
+
+
 
     this._transform.e = x;
     this._transform.f = y;
