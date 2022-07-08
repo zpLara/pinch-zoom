@@ -22,9 +22,6 @@ export interface ScaleToOpts extends ChangeOptions {
 export default class PinchZoom extends HTMLElement {
     private _positioningEl?;
     private _transform;
-    private _enablePan;
-    private _twoFingerPan;
-    private _noPanBeforeZoom;
     static get observedAttributes(): string[];
     constructor();
     attributeChangedCallback(name: string, oldValue: string, newValue: string): void;
@@ -32,12 +29,8 @@ export default class PinchZoom extends HTMLElement {
     set minScale(value: number);
     get maxScale(): number;
     set maxScale(value: number);
-    set enablePan(value: boolean);
-    get enablePan(): boolean;
-    set twoFingerPan(value: boolean);
-    get twoFingerPan(): boolean;
-    set noPanBeforeZoom(value: boolean);
     get noPanBeforeZoom(): boolean;
+    set noPanBeforeZoom(value: boolean);
     connectedCallback(): void;
     get x(): number;
     get y(): number;
