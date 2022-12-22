@@ -92,6 +92,9 @@ export default class PinchZoom extends HTMLElement {
   // Current transform.
   private _transform: SVGMatrix = createMatrix();
 
+  private prevX = -1;
+  private prevY = -1;
+
   static get observedAttributes() { return [minScaleAttr, maxScaleAttr, noPanBeforeZoomAttr]; }
 
   constructor() {
@@ -230,6 +233,19 @@ export default class PinchZoom extends HTMLElement {
       scaleDiff: scale / this.scale,
     });
   }
+  /**
+   * For mobile-like panning, pan more than touch pointer
+   */
+  mobilePanningEffect(newVal: number, orgVal: number) {
+
+    if (newVal != orgVal) {
+      console.log("mobilePanningEffect :: apply effect", { newValWithEffect: newVal * 1.05, newVal: newVal, org: orgVal });
+      return newVal * 1.05;//shift 5% more
+    } else {
+      console.log("mobilePanningEffect :: no change", { newVal: newVal, org: orgVal });
+      return newVal;
+    }
+  }
 
   /**
    * Update the stage with a given scale/x/y.
@@ -241,8 +257,8 @@ export default class PinchZoom extends HTMLElement {
     } = opts;
 
     let {
-      x = this.x,
-      y = this.y,
+      x = this.mobilePanningEffect(this.x, this.prevX),
+      y = this.mobilePanningEffect(this.y, this.prevY),
     } = opts;
 
     // If we don't have an element to position, just set the value as given.
@@ -324,7 +340,8 @@ export default class PinchZoom extends HTMLElement {
       y = 0;
     }
 
-
+    this.prevX = this._transform.e;
+    this.prevY = this._transform.f;
 
     this._transform.e = x;
     this._transform.f = y;

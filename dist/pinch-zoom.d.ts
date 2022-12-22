@@ -22,6 +22,8 @@ export interface ScaleToOpts extends ChangeOptions {
 export default class PinchZoom extends HTMLElement {
     private _positioningEl?;
     private _transform;
+    private prevX;
+    private prevY;
     static get observedAttributes(): string[];
     constructor();
     attributeChangedCallback(name: string, oldValue: string, newValue: string): void;
@@ -39,6 +41,10 @@ export default class PinchZoom extends HTMLElement {
      * Change the scale, adjusting x/y by a given transform origin.
      */
     scaleTo(scale: number, opts?: ScaleToOpts): void;
+    /**
+     * For mobile-like panning, pan more than touch pointer
+     */
+    mobilePanningEffect(newVal: number, orgVal: number): number;
     /**
      * Update the stage with a given scale/x/y.
      */

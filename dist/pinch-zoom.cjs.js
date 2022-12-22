@@ -77,6 +77,8 @@ class PinchZoom extends HTMLElement {
         super();
         // Current transform.
         this._transform = createMatrix();
+        this.prevX = -1;
+        this.prevY = -1;
         // Watch for children changes.
         // Note this won't fire for initial contents,
         // so _stageElChange is also called in connectedCallback.
@@ -187,11 +189,24 @@ class PinchZoom extends HTMLElement {
         });
     }
     /**
+     * For mobile-like panning, pan more than touch pointer
+     */
+    mobilePanningEffect(newVal, orgVal) {
+        if (newVal != orgVal) {
+            console.log("mobilePanningEffect :: apply effect", { newValWithEffect: newVal * 1.05, newVal: newVal, org: orgVal });
+            return newVal * 1.05; //shift 5% more
+        }
+        else {
+            console.log("mobilePanningEffect :: no change", { newVal: newVal, org: orgVal });
+            return newVal;
+        }
+    }
+    /**
      * Update the stage with a given scale/x/y.
      */
     setTransform(opts = {}) {
         const { scale = this.scale, allowChangeEvent = false, } = opts;
-        let { x = this.x, y = this.y, } = opts;
+        let { x = this.mobilePanningEffect(this.x, this.prevX), y = this.mobilePanningEffect(this.y, this.prevY), } = opts;
         // If we don't have an element to position, just set the value as given.
         // We'll check bounds later.
         if (!this._positioningEl) {
@@ -261,6 +276,8 @@ class PinchZoom extends HTMLElement {
             x = 0;
             y = 0;
         }
+        this.prevX = this._transform.e;
+        this.prevY = this._transform.f;
         this._transform.e = x;
         this._transform.f = y;
         this._transform.d = this._transform.a = scale;
